@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Dispatch Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .input-field {
+            transition: all 0.2s ease;
+            border: 1px solid #d1d5db;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            transition: transform 0.1s active;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        pre {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900">API Dispatcher</h1>
+            <p class="text-sm text-gray-500 mt-2">Execute secure macro requests</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="glass-card rounded-2xl p-6 mb-4">
+            <form id="apiForm" class="space-y-5">
+                <div>
+                    <label for="phone" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        name="phone" 
+                        placeholder="Enter the Phone Number" 
+                        required
+                        class="input-field w-full px-4 py-2.5 rounded-lg bg-white text-sm"
+                    >
+                </div>
+
+                <div>
+                    <label for="key" class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">API Key</label>
+                    <input 
+                        type="password" 
+                        id="key" 
+                        name="key" 
+                        placeholder="••••••••••••" 
+                        required
+                        class="input-field w-full px-4 py-2.5 rounded-lg bg-white text-sm"
+                    >
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="btn-primary w-full bg-gray-900 hover:bg-black text-white font-medium py-3 rounded-lg text-sm transition-colors duration-200 flex items-center justify-center gap-2"
+                >
+                    <span id="btnText">Execute Request</span>
+                    <div id="loader" class="hidden w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                </button>
+            </form>
+        </div>
+
+        <!-- Response Area -->
+        <div id="responseContainer" class="hidden transition-all duration-300">
+            <div class="glass-card rounded-2xl p-4 overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Server Response</span>
+                    <span id="statusBadge" class="text-[10px] px-2 py-0.5 rounded-full font-medium"></span>
+                </div>
+                <pre id="responseBody" class="text-xs font-mono text-gray-700 bg-gray-50 p-3 rounded-lg overflow-x-auto max-h-48"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiForm = document.getElementById('apiForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const responseContainer = document.getElementById('responseContainer');
+        const responseBody = document.getElementById('responseBody');
+        const statusBadge = document.getElementById('statusBadge');
+
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxTfM4EQX-09FdPiqM80u54SSfKn_4t27oddg8BPYtl_bftaLlifX_lj8Z_PBedP4aa6Q/exec';
+
+        apiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // UI Loading State
+            setLoading(true);
+            responseContainer.classList.add('hidden');
+
+            const payload = {
+                phone: document.getElementById('phone').value,
+                key: document.getElementById('key').value
+            };
+
+            try {
+                // Using standard fetch as requested for Vanilla JS replacement of Axios
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain', // Keeping text/plain as per your original code
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                showResponse(data, true);
+            } catch (error) {
+                console.error('Request failed:', error);
+                showResponse({ error: 'Connection failed', message: error.message }, false);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                btnText.textContent = 'Processing...';
+                loader.classList.remove('hidden');
+                submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+            } else {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Execute Request';
+                loader.classList.add('hidden');
+                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        }
+
+        function showResponse(data, success) {
+            responseContainer.classList.remove('hidden');
+            responseBody.textContent = JSON.stringify(data, null, 2);
+            
+            if (success) {
+                statusBadge.textContent = 'SUCCESS';
+                statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700';
+            } else {
+                statusBadge.textContent = 'ERROR';
+                statusBadge.className = 'text-[10px] px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700';
+            }
+        }
+    </script>
+</body>
+</html>
